@@ -1,0 +1,180 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-2.1.0.min.js" type="application/javascript"></script>
+
+        <script type="application/javascript">
+            var MODE_RESTING = 0;
+            var MODE_WORKING = 1;
+            var TICKS_PER_SECOND = 10;
+            var SECOND = 1000;
+
+            var timer;
+
+            String.prototype.trim=function(){
+                return this.replace(/^\s+|\s+$/g, '');
+            };
+
+            $( document ).ready(function() {
+                $("#seq").val("20 plank jacks, +10, 20 plank leg raises, +10, 20 climbers, +10, 20 plank arm reachers, +60");
+                $("#reps").val("3");
+                reset_screen();
+            });
+
+            function msToTime(duration) {
+                var milliseconds = parseInt((duration%1000)/100)
+                    , seconds = parseInt((duration/1000)%60)
+                    , minutes = parseInt((duration/(1000*60))%60)
+                    , hours = parseInt((duration/(1000*60*60))%24);
+
+                    hours = (hours < 10) ? "0" + hours : hours;
+                    minutes = (minutes < 10) ? "0" + minutes : minutes;
+                    seconds = (seconds < 10) ? "0" + seconds : seconds;
+                    return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+            }
+
+            function reset_screen() {
+                time_total = 0;
+                draw(0, 0, 0, 0, MODE_RESTING, 0);
+            }
+
+            function parse_seq(seq_string) {
+                seq = [];
+
+                $.each(seq_string.split(","), function(index, value) {
+                    var task = /([^\s]+)\s?(.*)/.exec(value.trim()).slice(1);
+                    seq.push({duration: task[0], title: task[1]});
+                });
+
+                return seq; 
+            }
+
+            function timer_start() {
+                reset_screen();
+
+                var seq = parse_seq($("#seq").val());
+                var reps = $("#reps").val();
+
+                var seq_index = 1;
+                var duration = seq[0].duration;
+                var title = seq[0].title;
+
+                var rep_counter = 1;
+
+                set_mode()
+
+                time_total = 0;
+                timer = setInterval(tick, SECOND / TICKS_PER_SECOND);
+
+                function set_mode() {
+                    if (duration.charAt(0) == "+") {
+                        mode = MODE_RESTING;
+
+                        if (!title)
+                            title = "\u0936\u0935\u093E\u0938\u0928 - Shavasana";
+                    }
+                    else
+                        mode = MODE_WORKING;
+                }
+
+                function tick() {
+                    if ((duration - (1/TICKS_PER_SECOND)) < 0) {
+                        if (seq_index > (seq.length-1)) {
+                            seq_index = 0;
+                            rep_counter++;
+                        }
+
+                        duration = seq[seq_index].duration;
+                        title = seq[seq_index].title;
+                        seq_index++;
+                        set_mode();
+                    }
+
+                    time_total = time_total + (1/TICKS_PER_SECOND);
+                    duration = duration - (1/TICKS_PER_SECOND);
+
+                    if (rep_counter > reps) {
+                        timer_stop();
+                        draw_done();
+                    }
+                    else {
+                        draw(rep_counter, reps, seq_index, seq.length, mode, duration, title);
+                    }
+                }
+
+            };
+
+            function timer_stop() {
+                clearInterval(timer); 
+            }
+
+            function timer_reset() {
+                timer_stop();
+                reset_screen();
+            };
+
+            function draw(rep_counter, reps, seq_index, seq_length, mode, counter, title) {
+                if (mode == MODE_RESTING)
+                    $('body').css('background-color', 'green');
+                else
+                    $('body').css('background-color', 'red');
+                
+                $('#stats').text("rep: " + rep_counter + " / " + reps + " seq: " + seq_index + " / " + seq_length);
+                $('#counter').text(parseFloat(counter).toFixed(1));
+                $('#title').text(title);
+                $('#time_total').text(msToTime(time_total*1000));
+            }
+
+            function draw_done() {
+                $('#counter').text("DONE!!");
+                $('#title').text("");
+            }
+
+        </script>
+
+        <style type="text/css">
+            #stats {
+                margin-left:auto;
+                margin-right:auto;
+                width:70%;
+                display: block;
+                z-index: -1;
+                font-size: 500%;
+            }
+
+            #seq {
+                width: 50%;
+            }
+
+            #counter {
+                margin-left:auto;
+                margin-right:auto;
+                width:70%;
+                display: block;
+                z-index: -1;
+                font-size: 1500%;
+            }
+
+            #title {
+                margin-left:auto;
+                margin-right:auto;
+                width:70%;
+                display: block;
+                z-index: -1;
+                font-size: 500%;
+            }
+        </style>
+
+    </head>
+    <body>
+        <span>Sequence: <input id="seq" type="TEXT"></span>
+        <span>Reps: <input id="reps" type="TEXT"></span>
+        <button type="button" class="btn btn-default" onclick="timer_start()">Start</button>
+        <button type="button" class="btn btn-default" onclick="timer_reset()">Reset</button>
+
+        <div id="stats">reps</div>
+        <div id="counter">hey</div>
+        <div id="title"></div>
+        <div id="time_total">ho</div>
+    </body>
+</html>
