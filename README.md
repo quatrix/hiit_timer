@@ -18,3 +18,8 @@ translates to:
 * 10 seconds rest
 * 20 seconds plank leg raises
 * 60 seconds rest
+
+demo
+====
+
+http://edisdead.com/hiit_timer/timer.html
